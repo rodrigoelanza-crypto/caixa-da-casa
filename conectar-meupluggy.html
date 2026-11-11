@@ -1,0 +1,30 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Conectar bancos - Caixa da Casa</title>
+<style>body{font:16px system-ui,sans-serif;background:#EEF1EC;color:#18231F;margin:0;padding:24px 16px}main{max-width:520px;margin:0 auto;display:grid;gap:16px}
+h1{font-size:22px;margin:0}.box{background:#fff;border:1px solid #D7DDD6;border-radius:14px;padding:16px;display:grid;gap:10px}
+button{font:inherit;font-weight:600;border:0;border-radius:12px;padding:14px;background:#1E6B52;color:#fff;cursor:pointer}button:disabled{opacity:.6}
+.id{font-family:ui-monospace,monospace;background:#EEF1EC;border-radius:8px;padding:8px;word-break:break-all}.err{color:#A8432E}.muted{color:#5E6B65;font-size:14px}</style></head>
+<body><main><h1>Conectar MeuPluggy · Caixa da Casa</h1>
+<div class="box"><div class="muted" id="tempo"></div><button id="btn">Conectar MeuPluggy</button><div id="msg"></div></div>
+<div class="box"><b>Bancos conectados agora</b><div id="lista" class="muted">Nenhum ainda.</div>
+<div class="muted">Depois de conectar, copie o texto abaixo e mande para o Claude na conversa.</div><div class="id" id="resumo">—</div>
+<button id="copiar" disabled>Copiar para mandar ao Claude</button></div></main>
+<script type="module">
+const TOKEN="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRJZCI6IjUyNDRhYWY3LTA2NDgtNGM2ZS1hZWU0LTExMTMwY2NlOTA0MCIsImRhdGEiOiJkNDU4NGY1MjhlZTllYWFiMjE1MjEyM2I1NDc2NTdhOToxNjlhOGYzMjYzMTUzMDk3YTlmMmE1NzI4MzcxMTEyNjgyZjAyZjZlMDk3OGYzNWRhMzllYzRmOGFhOTM2MDQ2YWRkYzUwNTc4ZWZlZTNkZDhiOGJiODA0NzBjMzA0M2E4NDRlOTIzMGU1MjYwNzFiNjM4MzQwNGU1NzAzMjJjNDFjYzAzZGZlMDZjMTI3YTk1OGUwOGI0MDYzOTc2ODFjNWZhYTgzYjM0NjI3Nzg4MWNjMzFjYzVkY2Y4MWIxNWYyZGZkZDliMmQyYmMxMzA5NzAwZDMyNmE2YjU0NDg4ZTYyZDlkNTk0M2Q2ZjZkZDczZTk1ZmUwNjhmNTFjZmE0IiwiaWF0IjoxNzk0NDI3MzY4LCJleHAiOjE3OTQ0MjkxNjh9.GDNFmP_WOmAoaaKe5an4yponaOg3a0ytXYkYoGyzmUgaknckRgK3j2iL7RHMm6WNp_QwFQpMmGDlQ9W5uBCW649CwG-FatSYHoGv-AdljIkZDpc4q41XwLFoB0cJMJC8h2wacBrR-sEEuNEEY280PP1rYBEkaPJKmyFkVSuxx0BcyyMTWSYxBSg_Ac3utn4l1omQhpU_4sMzSOV773Zl1N0RdyTXtoYB1Q746dMXW4hvgnXjpGrdL9JIVUimg0ipHWTwrx4SqsJund4A38tl1nO8BgN2-EbQNzx7-dXwVdH9mYqnmX5F6l5V4ccXkatQ__Q5YNvYfbfZvL0rAWaoGg", EXP=1794429168;
+const $=id=>document.getElementById(id); const itens=[];
+function tempo(){const m=Math.round((EXP*1000-Date.now())/60000);$("tempo").textContent=m>0?`Conexão liberada por mais ${m} min.`:"A liberação expirou. Peça ao Claude para liberar de novo.";$("btn").disabled=m<=0;}
+tempo();setInterval(tempo,30000);
+function mostra(){ if(!itens.length) return; $("lista").innerHTML=itens.map(i=>"🏦 "+i.nome).join("<br>"); $("resumo").textContent="Pluggy conectado: "+itens.map(i=>i.nome+" = "+i.id).join("; "); $("copiar").disabled=false; }
+$("copiar").onclick=async()=>{try{await navigator.clipboard.writeText($("resumo").textContent);$("copiar").textContent="Copiado!";}catch{ $("copiar").textContent="Selecione o texto e copie"; }};
+$("btn").onclick=async()=>{
+  $("msg").textContent="Abrindo…"; $("msg").className="";
+  try{
+    const mod=await import("https://cdn.jsdelivr.net/npm/pluggy-connect-sdk@2.14.2/+esm");
+    const PC=mod.PluggyConnect||(mod.default&&mod.default.PluggyConnect)||mod.default;
+    const w=new PC({connectToken:TOKEN,includeSandbox:false,connectorIds:[200],selectedConnectorId:200,
+      onSuccess:(data)=>{const it=data&&data.item; if(it&&it.id){itens.push({id:it.id,nome:(it.connector&&it.connector.name)||"Banco"}); mostra(); $("msg").textContent="Banco conectado! Pode conectar outro.";}},
+      onError:(e)=>{$("msg").textContent="Não conectou: "+((e&&e.message)||"tente de novo"); $("msg").className="err";}});
+    await w.init(); $("msg").textContent="";
+  }catch(e){ $("msg").textContent="Erro ao abrir o Pluggy: "+(e&&e.message||e); $("msg").className="err"; }
+};
+</script></body></html>
